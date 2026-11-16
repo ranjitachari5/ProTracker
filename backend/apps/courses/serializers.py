@@ -12,5 +12,7 @@ class CourseSerializer(serializers.ModelSerializer):
             "platform",
             "course_url",
             "created_at",
+            "progress",
+            "status",
         ]
-        read_only_fields = ["id", "created_at"]
+        read_only_fields = ["id", "created_at","status"]

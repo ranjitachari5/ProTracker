@@ -1,9 +1,12 @@
 from django.db import models
 from django.conf import settings
-from django.core.validators import MinLengthValidator
+from django.core.validators import MaxValueValidator, MinLengthValidator, MinValueValidator
 # Create your models here.
 validators=[MinLengthValidator(6)]
+
+min_max_for_progress=[MinValueValidator(0),MaxValueValidator(100)]
 choices=[("Youtube", "Youtube"), ("Udemy", "Udemy"),("Coursera","Coursera"),]
+progress_choice=[("not_started","Not Started"),("in_progress","In Progress"),("completed","Completed"),]
 class Course(models.Model):
     user=models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
     title=models.CharField(validators=validators,max_length=60,null=False)
@@ -11,3 +14,18 @@ class Course(models.Model):
     platform=models.CharField(max_length=8,choices=choices)
     course_url=models.URLField(null=False)
     created_at=models.DateTimeField(auto_now_add=True)
+    progress=models.IntegerField(default=0,validators=min_max_for_progress)
+    status=models.CharField(max_length=20,choices=progress_choice,default="not_started")
+    def update_status(self):
+        if(self.progress==0):
+            self.status="not_started"
+        elif self.progress>0 and self.progress<100:
+            self.status="in_progress"
+        else:
+            self.status="completed"
+    def save(self, *args, **kwargs):
+        self.update_status()
+        super().save(*args,**kwargs)
+
+
+
