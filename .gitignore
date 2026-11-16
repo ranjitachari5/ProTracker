@@ -3,7 +3,7 @@
 .env.*
 
 !.env.example
-
+login.json
 # Python
 __pycache__/
 *.py[cod]
