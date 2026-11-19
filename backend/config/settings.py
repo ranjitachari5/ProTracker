@@ -24,7 +24,8 @@ INSTALLED_APPS = [
     "apps.courses.apps.CoursesConfig",
     "apps.integrations.apps.IntegrationsConfig",
     "apps.progress.apps.ProgressConfig",
-
+    "apps.dashboard.apps.DashboardConfig",
+    "apps.goals.apps.GoalsConfig",
     # Third-party apps
     "rest_framework",
     "corsheaders",

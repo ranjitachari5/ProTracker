@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinLengthValidator, MinValueValidator
+from django.utils import timezone
 # Create your models here.
 validators=[MinLengthValidator(6)]
 
@@ -16,6 +17,7 @@ class Course(models.Model):
     created_at=models.DateTimeField(auto_now_add=True)
     progress=models.IntegerField(default=0,validators=min_max_for_progress)
     status=models.CharField(max_length=20,choices=progress_choice,default="not_started")
+    completed_at = models.DateTimeField(null=True, blank=True)
     def update_status(self):
         if(self.progress==0):
             self.status="not_started"
@@ -25,7 +27,23 @@ class Course(models.Model):
             self.status="completed"
     def save(self, *args, **kwargs):
         self.update_status()
-        super().save(*args,**kwargs)
+
+        if self.status == "completed":
+            if self.pk:
+                previous = Course.objects.filter(pk=self.pk).values(
+                "status", "completed_at"
+            ).first()
+
+            if previous and previous["status"] != "completed":
+                self.completed_at = timezone.now()
+            elif previous:
+                self.completed_at = previous["completed_at"]
+            else:
+             self.completed_at = timezone.now()
+        else:
+            self.completed_at = None
+
+        super().save(*args, **kwargs)
 
 
 
