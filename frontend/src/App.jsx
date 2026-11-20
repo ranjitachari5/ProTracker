@@ -2,6 +2,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './context/useAuth'
 import Login from './pages/Login'
+import Dashboard from './pages/Dashboard'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -17,26 +18,7 @@ function ProtectedRoute({ children }) {
   return user ? children : <Navigate to="/login" replace />
 }
 
-function Dashboard() {
-  const { user, logout } = useAuth()
 
-  return (
-    <div className="min-h-screen bg-slate-950 p-8 text-white">
-      <h1 className="text-3xl font-bold">ProTracker Dashboard</h1>
-
-      <p className="mt-3 text-slate-400">
-        Welcome, {user.username}!
-      </p>
-
-      <button
-        onClick={logout}
-        className="mt-6 rounded-lg bg-red-600 px-5 py-2 font-semibold hover:bg-red-700"
-      >
-        Logout
-      </button>
-    </div>
-  )
-}
 
 function App() {
   return (

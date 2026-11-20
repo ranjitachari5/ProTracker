@@ -39,19 +39,25 @@ export function AuthProvider({ children }) {
 
   // Login
   const login = async (credentials) => {
-    const tokens = await loginUser(credentials)
+  console.log('1. AuthContext login started')
 
-    sessionStorage.setItem('access', tokens.access)
-    sessionStorage.setItem('refresh', tokens.refresh)
+  const tokens = await loginUser(credentials)
+  console.log('2. Login API response received')
 
-    api.defaults.headers.common.Authorization = `Bearer ${tokens.access}`
+  sessionStorage.setItem('access', tokens.access)
+  sessionStorage.setItem('refresh', tokens.refresh)
 
-    const userData = await getCurrentUser()
-    setUser(userData)
+  api.defaults.headers.common.Authorization = `Bearer ${tokens.access}`
 
-    return userData
-  }
+  console.log('3. Access token configured')
 
+  const userData = await getCurrentUser()
+  console.log('4. Current user received:', userData)
+
+  setUser(userData)
+
+  return userData
+}
   // Logout
   const logout = () => {
     sessionStorage.removeItem('access')
