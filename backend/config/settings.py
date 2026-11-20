@@ -4,12 +4,84 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv("SECRET_KEY", "development-only-secret-key")
-DEBUG = os.getenv("DEBUG", "True").lower() == "true"
 
-ALLOWED_HOSTS = os.getenv(
-    "ALLOWED_HOSTS", "localhost,127.0.0.1,backend"
-).split(",")
+# --------------------------------------------------
+# Environment helpers
+# --------------------------------------------------
+
+def env_bool(name, default=False):
+    return os.getenv(name, str(default)).strip().lower() in (
+        "true", "1", "yes", "on"
+    )
+
+
+def env_list(name, default=""):
+    return [
+        item.strip()
+        for item in os.getenv(name, default).split(",")
+        if item.strip()
+    ]
+
+
+# --------------------------------------------------
+# Security
+# --------------------------------------------------
+
+DEBUG = env_bool("DEBUG", True)
+
+SECRET_KEY = os.getenv(
+    "SECRET_KEY",
+    "development-only-secret-key"
+).strip()
+
+if not DEBUG and SECRET_KEY == "development-only-secret-key":
+    raise ValueError(
+        "A secure SECRET_KEY must be configured when DEBUG=False."
+    )
+
+ALLOWED_HOSTS = env_list(
+    "ALLOWED_HOSTS",
+    "localhost,127.0.0.1,backend"
+)
+
+if not DEBUG and not ALLOWED_HOSTS:
+    raise ValueError(
+        "ALLOWED_HOSTS must be configured when DEBUG=False."
+    )
+
+SECURE_SSL_REDIRECT = env_bool("SECURE_SSL_REDIRECT", False)
+
+SECURE_HSTS_SECONDS = int(
+    os.getenv("SECURE_HSTS_SECONDS", "0")
+)
+
+SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool(
+    "SECURE_HSTS_INCLUDE_SUBDOMAINS", False
+)
+
+SECURE_HSTS_PRELOAD = env_bool(
+    "SECURE_HSTS_PRELOAD", False
+)
+
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = "same-origin"
+X_FRAME_OPTIONS = "DENY"
+
+SECURE_COOKIES = env_bool("SECURE_COOKIES", not DEBUG)
+
+SESSION_COOKIE_SECURE = SECURE_COOKIES
+CSRF_COOKIE_SECURE = SECURE_COOKIES
+
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = True
+
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = "Lax"
+
+
+# --------------------------------------------------
+# Applications
+# --------------------------------------------------
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -26,11 +98,18 @@ INSTALLED_APPS = [
     "apps.progress.apps.ProgressConfig",
     "apps.dashboard.apps.DashboardConfig",
     "apps.goals.apps.GoalsConfig",
+
     # Third-party apps
     "rest_framework",
     "corsheaders",
     "django_filters",
 ]
+
+
+# --------------------------------------------------
+# Middleware
+# --------------------------------------------------
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -42,7 +121,20 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
+
+# --------------------------------------------------
+# URL configuration
+# --------------------------------------------------
+
 ROOT_URLCONF = "config.urls"
+
+WSGI_APPLICATION = "config.wsgi.application"
+ASGI_APPLICATION = "config.asgi.application"
+
+
+# --------------------------------------------------
+# Templates
+# --------------------------------------------------
 
 TEMPLATES = [
     {
@@ -59,42 +151,105 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "config.wsgi.application"
-ASGI_APPLICATION = "config.asgi.application"
+
+# --------------------------------------------------
+# Database - PostgreSQL
+# --------------------------------------------------
 
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": os.getenv("DB_NAME", "protracker"),
         "USER": os.getenv("DB_USER", "protracker"),
-        "PASSWORD": os.getenv("DB_PASSWORD", "protracker_dev_password"),
+        "PASSWORD": os.getenv(
+            "DB_PASSWORD",
+            "protracker_dev_password"
+        ),
         "HOST": os.getenv("DB_HOST", "db"),
         "PORT": os.getenv("DB_PORT", "5432"),
+        "CONN_MAX_AGE": int(
+            os.getenv("DB_CONN_MAX_AGE", "60")
+        ),
     }
 }
 
+
+# --------------------------------------------------
+# Password validation
+# --------------------------------------------------
+
 AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
-    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
-    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
-    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+    {
+        "NAME": (
+            "django.contrib.auth.password_validation."
+            "UserAttributeSimilarityValidator"
+        )
+    },
+    {
+        "NAME": (
+            "django.contrib.auth.password_validation."
+            "MinimumLengthValidator"
+        )
+    },
+    {
+        "NAME": (
+            "django.contrib.auth.password_validation."
+            "CommonPasswordValidator"
+        )
+    },
+    {
+        "NAME": (
+            "django.contrib.auth.password_validation."
+            "NumericPasswordValidator"
+        )
+    },
 ]
+
+
+# --------------------------------------------------
+# Internationalization
+# --------------------------------------------------
 
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "Asia/Kolkata"
+
 USE_I18N = True
 USE_TZ = True
+
+
+# --------------------------------------------------
+# Static files
+# --------------------------------------------------
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+
+# --------------------------------------------------
+# Default primary key
+# --------------------------------------------------
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-]
 
+# --------------------------------------------------
+# CORS and CSRF
+# --------------------------------------------------
+
+CORS_ALLOWED_ORIGINS = env_list(
+    "CORS_ALLOWED_ORIGINS",
+    "http://localhost:5173,http://127.0.0.1:5173"
+)
+
+CSRF_TRUSTED_ORIGINS = env_list(
+    "CSRF_TRUSTED_ORIGINS",
+    ""
+)
+
+
+# --------------------------------------------------
+# Django REST Framework
+# --------------------------------------------------
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
@@ -108,7 +263,8 @@ REST_FRAMEWORK = {
         "rest_framework.filters.SearchFilter",
         "rest_framework.filters.OrderingFilter",
     ],
-    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "DEFAULT_PAGINATION_CLASS": (
+        "rest_framework.pagination.PageNumberPagination"
+    ),
     "PAGE_SIZE": 5,
 }
-
